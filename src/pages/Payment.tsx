@@ -1,152 +1,3 @@
-// import React, { useState, useEffect } from 'react';
-// import { useParams, useNavigate } from 'react-router-dom';
-// import { Calendar, MapPin, Users, Crown, Ticket } from 'lucide-react';
-// import { useEventStore } from '../store/eventStore';
-// import { useAuthStore } from '../store/authStore';
-// import { makePaymentWithTelos } from '../utils/web3';
-// import toast from 'react-hot-toast';
-// import QRCode from 'qrcode.react';
-
-// const RECEIVER_ADDRESS = '0xF5FeFBf4eE405d61eFa05870357ca86b14196462';
-
-// const Payment = () => {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const { events } = useEventStore();
-//   const { isAuthenticated, user, addTicket } = useAuthStore();
-//   const [selectedTicket, setSelectedTicket] = useState('general');
-//   const [quantity, setQuantity] = useState(1);
-//   const [isProcessing, setIsProcessing] = useState(false);
-//   const [ticketData, setTicketData] = useState<any>(null);
-
-//   const event = events.find(e => e.id === id);
-
-//   useEffect(() => {
-//     if (!isAuthenticated) {
-//       toast.error('Please login to continue');
-//       navigate('/login');
-//     }
-//   }, [isAuthenticated, navigate]);
-
-//   if (!event) {
-//     return <div className="text-center text-red-500 text-xl font-bold mt-10">Event not found!</div>;
-//   }
-
-//   const handlePaymentSuccess = async (txHash?: string) => {
-//     const newTicket = {
-//       id: `ticket_${Date.now()}`,
-//       eventId: event.id,
-//       type: selectedTicket,
-//       quantity: quantity,
-//       totalPrice: event.price[selectedTicket as keyof typeof event.price] * quantity,
-//       purchaseDate: new Date().toISOString(),
-//       transactionHash: txHash,
-//       event: {
-//         title: event.title,
-//         date: event.date,
-//         time: event.time,
-//         venue: event.venue,
-//         image: event.image,
-//       },
-//     };
-
-//     try {
-//       await addTicket(newTicket);
-//       setTicketData(newTicket);
-//       toast.success('Ticket purchased successfully! ✅');
-
-//       // Redirect to dashboard
-//       setTimeout(() => {
-//         navigate('/dashboard');
-//       }, 2000);
-//     } catch (error) {
-//       console.error('❌ Failed to save ticket:', error);
-//       toast.error('Failed to save ticket details.');
-//     }
-//   };
-
-//   const handlePaymentWithTelos = async () => {
-//     if (!isAuthenticated) {
-//       toast.error('Please login first');
-//       navigate('/login');
-//       return;
-//     }
-
-//     setIsProcessing(true);
-//     try {
-//       const amount = event.price[selectedTicket as keyof typeof event.price] * quantity;
-      
-//       toast('Waiting for MetaMask confirmation...', { icon: '⏳' });
-
-//       const txHash = await makePaymentWithTelos(amount, RECEIVER_ADDRESS);
-
-//       if (!txHash) {
-//         throw new Error('Transaction failed or rejected');
-//       }
-
-//       toast.success('Transaction confirmed! ✅');
-//       await handlePaymentSuccess(txHash);
-
-//     } catch (error: any) {
-//       console.error('❌ Payment failed:', error);
-//       toast.error(error.message || 'Payment failed. Please try again.');
-//     } finally {
-//       setIsProcessing(false);
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gray-50 py-12">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-//           <div className="p-8">
-//             <h2 className="text-2xl font-bold text-center mb-6">Order Summary</h2>
-            
-//             <div className="space-y-4">
-//               <div className="flex justify-between">
-//                 <span className="font-semibold">Event:</span>
-//                 <span>{event.title}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="font-semibold">Date & Time:</span>
-//                 <span>{event.date} at {event.time}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="font-semibold">Venue:</span>
-//                 <span>{event.venue}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="font-semibold">Ticket Type:</span>
-//                 <span className="capitalize">{selectedTicket}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="font-semibold">Quantity:</span>
-//                 <span>{quantity}</span>
-//               </div>
-//               <div className="flex justify-between text-lg font-semibold">
-//                 <span>Total Amount:</span>
-//                 <span>${(event.price[selectedTicket as keyof typeof event.price] * quantity).toFixed(2)}</span>
-//               </div>
-//             </div>
-
-//             <div className="mt-6 space-y-4">
-//               <button
-//                 onClick={handlePaymentWithTelos}
-//                 disabled={isProcessing}
-//                 className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-//               >
-//                 {isProcessing ? 'Processing...' : 'Pay with Telos'}
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Payment;
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Users, Crown, Ticket } from 'lucide-react';
@@ -155,6 +6,8 @@ import { useAuthStore } from '../store/authStore';
 import { makePaymentWithTelos } from '../utils/web3';
 import { initializeRazorpay } from '../utils/razorpay';
 import toast from 'react-hot-toast';
+
+const DEFAULT_RECEIVER_ADDRESS = '0xF5FeFBf4eE405d61eFa05870357ca86b14196462';
 
 const Payment = () => {
   const { id } = useParams();
@@ -175,15 +28,15 @@ const Payment = () => {
   }, [isAuthenticated, navigate]);
 
   if (!event) {
-    return <div>Event not found</div>;
+    return <div className="text-center text-red-600 font-bold text-xl mt-10">Event not found!</div>;
   }
 
   const handlePaymentSuccess = () => {
     const newTicket = {
-      id: ticket_${Date.now()},
+      id: `ticket_${Date.now()}`, // ✅ FIXED SYNTAX ERROR
       eventId: event.id,
       type: selectedTicket,
-      quantity: quantity,
+      quantity,
       totalPrice: event.price[selectedTicket as keyof typeof event.price] * quantity,
       purchaseDate: new Date().toISOString(),
       event: {
@@ -210,7 +63,7 @@ const Payment = () => {
     setIsProcessing(true);
     try {
       const amount = event.price[selectedTicket as keyof typeof event.price] * quantity;
-      const receiverAddress = event.organizerWallet || "0xF5FeFBf4eE405d61eFa05870357ca86b14196462";
+      const receiverAddress = event.organizerWallet || DEFAULT_RECEIVER_ADDRESS; // ✅ Ensure receiver address
       const txHash = await makePaymentWithTelos(amount, receiverAddress);
       console.log('Transaction hash:', txHash);
       handlePaymentSuccess();
@@ -238,12 +91,12 @@ const Payment = () => {
         amount,
         currency: 'INR',
         name: 'EventTix',
-        description: Tickets for ${event.title},
+        description: `Tickets for ${event.title}`, // ✅ FIXED STRING INTERPOLATION
         handler: function () {
           handlePaymentSuccess();
         },
         prefill: {
-          email: user?.email,
+          email: user?.email || '',
           contact: '',
         },
         theme: {
@@ -329,44 +182,20 @@ const Payment = () => {
 
             {/* Payment Section */}
             <div className="md:w-1/2 bg-gray-50 p-8">
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Ticket Price</span>
-                    <span>${event.price[selectedTicket as keyof typeof event.price].toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Quantity</span>
-                    <span>{quantity}</span>
-                  </div>
-                  <div className="border-t border-gray-200 pt-2 mt-2">
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>Total Amount</span>
-                      <span>
-                        ${(event.price[selectedTicket as keyof typeof event.price] * quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  onClick={handlePaymentWithTelos}
-                  disabled={isProcessing}
-                  className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? 'Processing...' : 'Pay with Telos'}
-                </button>
-                <button
-                  onClick={handlePaymentWithRazorpay}
-                  disabled={isProcessing}
-                  className="w-full py-3 px-4 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? 'Processing...' : 'Pay with Razorpay'}
-                </button>
-              </div>
+              <button
+                onClick={handlePaymentWithTelos}
+                disabled={isProcessing}
+                className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {isProcessing ? 'Processing...' : 'Pay with Telos'}
+              </button>
+              <button
+                onClick={handlePaymentWithRazorpay}
+                disabled={isProcessing}
+                className="w-full py-3 px-4 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                {isProcessing ? 'Processing...' : 'Pay with Razorpay'}
+              </button>
             </div>
           </div>
         </div>
