@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 export const TELOS_TESTNET_RPC = 'https://testnet.telos.net/evm';
 export const TELOS_TESTNET_CHAIN_ID = 41;
+export const TELOS_TESTNET_CHAIN_ID_HEX = '0x29'; // 41 in hex
 
 export const connectMetaMask = async () => {
   try {
@@ -10,19 +11,19 @@ export const connectMetaMask = async () => {
       throw new Error('MetaMask is not installed');
     }
 
-    // First try to switch to the Telos network
+    // Switch to Telos network
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${TELOS_TESTNET_CHAIN_ID.toString(16)}` }],
+        params: [{ chainId: TELOS_TESTNET_CHAIN_ID_HEX }],
       });
     } catch (switchError: any) {
-      // This error code indicates that the chain has not been added to MetaMask
       if (switchError.code === 4902) {
+        // If the network is not added, add it first
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [{
-            chainId: `0x${TELOS_TESTNET_CHAIN_ID.toString(16)}`,
+            chainId: TELOS_TESTNET_CHAIN_ID_HEX,
             chainName: 'Telos Testnet',
             nativeCurrency: {
               name: 'TLOS',
@@ -65,14 +66,14 @@ export const makePaymentWithTelos = async (amount: number, to: string) => {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${TELOS_TESTNET_CHAIN_ID.toString(16)}` }],
+        params: [{ chainId: TELOS_TESTNET_CHAIN_ID_HEX }],
       });
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [{
-            chainId: `0x${TELOS_TESTNET_CHAIN_ID.toString(16)}`,
+            chainId: TELOS_TESTNET_CHAIN_ID_HEX,
             chainName: 'Telos Testnet',
             nativeCurrency: {
               name: 'TLOS',
@@ -93,16 +94,25 @@ export const makePaymentWithTelos = async (amount: number, to: string) => {
       throw new Error('Invalid recipient address');
     }
 
+    // Convert amount to Wei
+    const amountInWei = ethers.parseEther(amount.toString());
+
+    // Estimate gas
+    const gasLimit = await provider.estimateGas({
+      to,
+      value: amountInWei,
+    });
+
+    // Send transaction
     const tx = await signer.sendTransaction({
       to,
-      value: ethers.parseEther(amount.toString()),
-      chainId: TELOS_TESTNET_CHAIN_ID
+      value: amountInWei,
+      gasLimit: gasLimit, // Ensuring gas is included
     });
 
     await tx.wait();
     return tx.hash;
   } catch (error: any) {
-    // Handle specific error cases
     if (error.code === 4001) {
       throw new Error('Transaction rejected by user');
     } else if (error.code === -32603) {
