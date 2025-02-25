@@ -5,7 +5,7 @@ export const TELOS_TESTNET_RPC = 'https://testnet.telos.net/evm';
 export const TELOS_TESTNET_CHAIN_ID = 41;
 
 /**
- * Connects MetaMask and switches to Telos Testnet.
+ * Connects to MetaMask and switches to Telos Testnet.
  */
 export const connectMetaMask = async () => {
   try {
@@ -13,11 +13,12 @@ export const connectMetaMask = async () => {
       throw new Error('❌ MetaMask is not installed');
     }
 
+    // Request account access
     const provider = new ethers.BrowserProvider(window.ethereum);
     const accounts = await provider.send('eth_requestAccounts', []);
-    
-    if (accounts.length === 0) {
-      throw new Error('❌ No accounts found');
+
+    if (!accounts || accounts.length === 0) {
+      throw new Error('❌ No accounts found in MetaMask');
     }
 
     // Switch to Telos Testnet
@@ -25,15 +26,15 @@ export const connectMetaMask = async () => {
 
     return accounts[0]; // Return the connected account
   } catch (error: any) {
-    toast.error(error.message);
+    toast.error(error.message || '⚠️ Failed to connect MetaMask');
     throw error;
   }
 };
 
 /**
- * Switches MetaMask to the Telos Testnet.
+ * Ensures MetaMask is on the Telos Testnet. Adds it if missing.
  */
-const switchToTelosNetwork = async () => {
+export const switchToTelosNetwork = async () => {
   try {
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
@@ -41,6 +42,7 @@ const switchToTelosNetwork = async () => {
     });
   } catch (switchError: any) {
     if (switchError.code === 4902) {
+      // If Telos is not added, add it
       try {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
@@ -57,7 +59,7 @@ const switchToTelosNetwork = async () => {
           }]
         });
       } catch (addError) {
-        throw new Error('❌ Failed to add Telos network to MetaMask');
+        throw new Error('❌ Failed to add Telos Testnet to MetaMask');
       }
     } else {
       throw new Error('❌ Failed to switch to Telos network');
@@ -66,7 +68,7 @@ const switchToTelosNetwork = async () => {
 };
 
 /**
- * Sends a Telos transaction using MetaMask.
+ * Sends a Telos payment using MetaMask.
  */
 export const makePaymentWithTelos = async (amount: number, to: string) => {
   try {
@@ -80,30 +82,30 @@ export const makePaymentWithTelos = async (amount: number, to: string) => {
     // Ensure we're on Telos network
     await switchToTelosNetwork();
 
-    // Validate the recipient address
+    // Validate recipient address
     try {
-      ethers.getAddress(to); // Validate address in ethers v6
+      ethers.getAddress(to); // Correct method for ethers v6
     } catch (error) {
       throw new Error('❌ Invalid recipient address');
     }
 
-    // Prepare the transaction
+    // Convert amount to Wei
     const amountInWei = ethers.parseEther(amount.toString());
 
-    // Send the transaction
+    // Create transaction
     const tx = await signer.sendTransaction({
       to,
       value: amountInWei,
       chainId: TELOS_TESTNET_CHAIN_ID
     });
 
-    // Wait for transaction confirmation
+    // Wait for confirmation
     const receipt = await tx.wait();
     if (!receipt) {
       throw new Error('❌ Transaction failed');
     }
 
-    toast.success(`✅ Transaction successful! Hash: ${tx.hash}`);
+    toast.success(`✅ Payment successful! Hash: ${tx.hash}`);
     return tx.hash;
   } catch (error: any) {
     console.error('❌ Payment error:', error);
